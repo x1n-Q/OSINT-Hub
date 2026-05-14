@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OSINT Hub
+Comment=All-in-One OSINT Framework
+Exec=python3 /home/xinq/OSINT\ Hub/main.py
+Icon=osinthub
+Terminal=false
+Categories=Security;Network;
+Keywords=osint;security;reconnaissance;investigation;
