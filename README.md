@@ -363,6 +363,10 @@ OSINT Hub is a framework that integrates and simplifies the use of many incredib
 
 Please support these projects by visiting their repositories, giving them a star, or contributing to their development.
 
+## Author
+
+**Daniel Depaor** ([@x1n-Q](https://github.com/x1n-Q))
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) file for details.
