@@ -182,28 +182,28 @@ All scan results are automatically:
 
 ## Directory Structure
 
-```
+```text
 OSINT Hub/
-├── main.py                    # Main launcher (GUI by default)
-├── main-gui.py               # GUI-only launcher
-├── cli.py                    # CLI interface
-├── requirements.txt          # Python dependencies
-├── setup.py                  # Installer script
-├── README.md                # This file
-├── LICENSE                  # License file
-├── osinthub/               # Core package
-│   ├── __init__.py
-│   ├── tools/
-│   │   └── registry.py      # Tool definitions
-│   ├── core/
-│   │   ├── tool_manager.py  # Installation & execution
-│   │   ├── results_manager.py  # Results handling
-│   │   └── config_manager.py   # Settings management
-│   └── gui/
-│       └── main_window.py  # GUI application
-├── tools/                   # Installed tools directory
-├── config/                 # Configuration files
-└── output/                 # Default output directory
+|-- main.py                    # Main launcher (GUI by default)
+|-- main-gui.py                # GUI-only launcher
+|-- cli.py                     # CLI interface
+|-- requirements.txt           # Python dependencies
+|-- setup.py                   # Installer script
+|-- README.md                  # This file
+|-- LICENSE                    # License file
+|-- osinthub/                  # Core package
+|   |-- __init__.py
+|   |-- tools/
+|   |   `-- registry.py        # Tool definitions
+|   |-- core/
+|   |   |-- tool_manager.py    # Installation and execution
+|   |   |-- results_manager.py # Results handling
+|   |   `-- config_manager.py  # Settings management
+|   `-- gui/
+|       `-- main_window.py     # GUI application
+|-- tools/                     # Installed tools directory
+|-- config/                    # Configuration files
+`-- output/                    # Default output directory
 ```
 
 ## Configuration
@@ -376,11 +376,6 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - **Documentation**: See `docs/` folder (coming soon)
 - **Issues**: Report bugs via GitHub Issues
 - **Updates**: Auto-check enabled by default
-
----
-
-**Built for security researchers, investigators, and analysts.**
-ult
 
 ---
 
