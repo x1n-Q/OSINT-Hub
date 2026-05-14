@@ -37,7 +37,8 @@
 ### Quick Setup
 
 ```bash
-cd "/home/xinq/OSINT Hub"
+git clone https://github.com/x1n-Q/OSINT-Hub.git
+cd OSINT-Hub
 python3 -m pip install -r requirements.txt
 python3 main.py
 ```
@@ -45,7 +46,7 @@ python3 main.py
 ### Using the Installer
 
 ```bash
-cd "/home/xinq/OSINT Hub"
+cd OSINT-Hub
 python3 setup.py install --user
 ```
 

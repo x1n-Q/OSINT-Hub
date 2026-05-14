@@ -32,14 +32,15 @@ chmod +x main.py cli.py menu.py
 
 # Create desktop entry
 echo "Creating desktop launcher..."
+PROJECT_PATH=$(pwd)
 cat > ~/.local/share/applications/osinthub.desktop << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=OSINT Hub
 Comment=All-in-One OSINT Framework
-Exec=python3 /home/xinq/OSINT\ Hub/main.py
-Icon=osinthub
+Exec=python3 $PROJECT_PATH/main.py
+Icon=$PROJECT_PATH/osinthub/gui/icon.png
 Terminal=false
 Categories=Security;Network;
 EOF
@@ -52,7 +53,7 @@ echo "✓ Installation complete!"
 echo ""
 echo "You can now:"
 echo "  1. Launch from Applications menu (OSINT Hub)"
-echo "  2. Run: python3 /home/xinq/OSINT\ Hub/main.py"
-echo "  3. Use CLI: python3 /home/xinq/OSINT\ Hub/cli.py"
+echo "  2. Run: python3 $PROJECT_PATH/main.py"
+echo "  3. Use CLI: python3 $PROJECT_PATH/cli.py"
 echo ""
 echo "Happy hunting! 🔍"
