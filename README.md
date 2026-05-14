@@ -335,9 +335,37 @@ Contributions welcome! Areas needing help:
 - Documentation
 - Bug fixes
 
+## Credits & Attributions
+
+OSINT Hub is a framework that integrates and simplifies the use of many incredible open-source tools. We would like to thank the authors and contributors of the following projects:
+
+| Tool | Category | Original Repository / Homepage |
+|------|----------|-------------------------------|
+| **Sherlock** | Username Search | [sherlock-project/sherlock](https://github.com/sherlock-project/sherlock) |
+| **theHarvester** | Email Intelligence | [laramies/theHarvester](https://github.com/laramies/theHarvester) |
+| **SpiderFoot** | All-in-One | [smicallef/spiderfoot](https://github.com/smicallef/spiderfoot) |
+| **Maltego** | All-in-One | [Maltego Technologies](https://www.maltego.com/) |
+| **Recon-ng** | All-in-One | [lanmaster53/recon-ng](https://github.com/lanmaster53/recon-ng) |
+| **Shodan CLI** | IP & Geolocation | [achillean/shodan-python](https://github.com/achillean/shodan-python) |
+| **Hunter.io** | Email Intelligence | [Hunter.io](https://hunter.io/) |
+| **HaveIBeenPwned** | Breach Data | [Troy Hunt (HIBP)](https://haveibeenpwned.com/) |
+| **Instaloader** | Social Media | [instaloader/instaloader](https://github.com/instaloader/instaloader) |
+| **Twint** | Social Media | [twintproject/twint](https://github.com/twintproject/twint) |
+| **GitHub Recon** | Social Media | [techgaun/github-dorks](https://github.com/techgaun/github-dorks) |
+| **PhoneInfoga** | Phone Number | [sundowndev/phoneinfoga](https://github.com/sundowndev/phoneinfoga) |
+| **ExifTool** | Image Metadata | [Phil Harvey (ExifTool)](https://exiftool.org/) |
+| **Amass** | Domain & DNS | [owasp-amass/amass](https://github.com/owasp-amass/amass) |
+| **Nmap** | Network Scanning | [Gordon Lyon (Nmap)](https://nmap.org/) |
+| **Metagoofil** | Image Metadata | [laramies/metagoofil](https://github.com/laramies/metagoofil) |
+| **SocialScan** | Social Media | [iojw/socialscan](https://github.com/iojw/socialscan) |
+| **EmailHarvester** | Email Intelligence | [maldevel/EmailHarvester](https://github.com/maldevel/EmailHarvester) |
+| **Social ID Extractor** | Social Media | [soxoj/socid-extractor](https://github.com/soxoj/socid-extractor) |
+
+Please support these projects by visiting their repositories, giving them a star, or contributing to their development.
+
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Support
 
