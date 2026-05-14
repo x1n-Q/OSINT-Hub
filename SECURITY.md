@@ -15,7 +15,7 @@ We take the security of our users and the tools integrated into OSINT Hub seriou
 If you discover a security vulnerability within OSINT Hub, please report it to us by:
 
 1. Opening a private issue on GitHub (if available)
-2. Sending an email to contact@osinthub.local
+2. Sending an email to daniel.depaor@outlook.jp
 
 Please include the following in your report:
 

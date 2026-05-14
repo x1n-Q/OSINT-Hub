@@ -12,7 +12,7 @@ setup(
     name="osinthub",
     version="1.0.0",
     author="OSINT Hub Team",
-    author_email="contact@osinthub.local",
+    author_email="daniel.depaor@outlook.jp",
     description="All-in-One OSINT Framework with GUI",
     long_description=long_description,
     long_description_content_type="text/markdown",
