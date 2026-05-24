@@ -1,7 +1,7 @@
 # OSINT Hub - All-in-One OSINT Framework
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Python](https://img.shields.io/badge/python-3.8%2B-brightgreen)
+![Python](https://img.shields.io/badge/python-3.11-recommended-brightgreen)
 
 > A comprehensive all-in-one OSINT framework with a modern GUI for beginners and powerful CLI for advanced users. Simplifies the use of multiple OSINT tools in one unified platform.
 
@@ -34,26 +34,65 @@
 
 ## Installation
 
-### Quick Setup
+### Recommended Setup (Python 3.11 + local `.venv`)
 
 ```bash
 git clone https://github.com/x1n-Q/OSINT-Hub.git
 cd OSINT-Hub
-python3 -m pip install -r requirements.txt
-python3 main.py
+python bootstrap_env.py
+.venv\Scripts\python.exe main.py
 ```
+
+On Linux/macOS:
+
+```bash
+python3 bootstrap_env.py
+.venv/bin/python main.py
+```
+
+`bootstrap_env.py` looks for Python `3.11`, creates a project-local virtual environment in `.venv`, installs pinned GUI/runtime dependencies from `requirements-py311.txt`, and installs OSINT Hub into that environment.
+
+### Why This Setup
+
+- Python `3.11` is the most reliable version for the bundled third-party OSINT tools.
+- Running from `.venv` avoids "works on my PC" issues caused by global Python packages.
+- `main.py`, `cli.py`, and `menu.py` will automatically switch into `.venv` if it already exists.
+
+### Windows Release Build
+
+Use this when your goal is to ship a Windows `.exe` instead of asking users to run the source tree directly.
+
+```bash
+python -m pip install -r requirements-build.txt
+python build_exe.py --zip
+```
+
+If you already created the project `.venv`, you can also use:
+
+```bat
+build_release.bat --zip
+```
+
+The build creates a release folder in `dist/OSINT-Hub-Windows/` with:
+- `OSINT Hub.exe` for the GUI application
+- `OSINT Hub Runtime Setup.exe` for preparing the managed Python `3.11` runtime used by tool installers
+
+Important:
+- The bundled GUI app is an `.exe`, but many third-party OSINT tools are still Python-based.
+- End users should run `OSINT Hub Runtime Setup.exe` once before installing Python-based tools from the app.
+- If Python `3.11` is not present on the target PC yet, install it first and then rerun the runtime setup helper.
 
 ### Using the Installer
 
 ```bash
 cd OSINT-Hub
-python3 setup.py install --user
+python setup_complete.py
 ```
 
 ### Dependencies
 
 OSINT Hub requires:
-- Python 3.8+
+- Python 3.11 recommended
 - pip (Python package manager)
 - git (for git-based tools)
 - Basic build tools (gcc, make)
@@ -69,7 +108,7 @@ sudo apt-get install python3 python3-pip git build-essential
 ### Launch GUI (Beginner-Friendly)
 
 ```bash
-python3 main.py
+.venv\Scripts\python.exe main.py
 ```
 
 This opens the modern graphical interface with:
@@ -82,7 +121,7 @@ This opens the modern graphical interface with:
 ### Use CLI (Advanced)
 
 ```bash
-python3 cli.py --help
+.venv\Scripts\python.exe cli.py --help
 ```
 
 Common CLI commands:
@@ -112,6 +151,94 @@ python3 cli.py results
 # Export results
 python3 cli.py export --format json --output results.json
 ```
+
+### SocialScan Quick Start
+
+SocialScan is useful for checking whether a username or email is already taken on supported platforms.
+
+Install it:
+
+```bash
+python3 cli.py install socialscan
+```
+
+Run it for a username:
+
+```bash
+python3 cli.py run socialscan danieldepaor
+```
+
+Run it for an email:
+
+```bash
+python3 cli.py run socialscan danieldepaor@gmail.com
+```
+
+In the GUI:
+- Open `SocialScan`
+- Enter a username or email in the `target` field
+- Click `Run Tool`
+
+Notes:
+- SocialScan needs working DNS and outbound HTTPS access on the PC running it.
+- If every provider returns DNS or connection errors, OSINT Hub now marks the scan as failed instead of showing a false success.
+- For the best compatibility, use Python `3.11` through the project `.venv` or the release runtime setup helper.
+
+## Tool Setup and Troubleshooting
+
+This section is the "what do I do when this tool does not install or run?" guide.
+
+### Status Labels in OSINT Hub
+
+- `READY`: Installed and runnable on this machine.
+- `AVAILABLE`: OSINT Hub can install it for you.
+- `SETUP REQUIRED`: OSINT Hub can use it, but a prerequisite is missing first.
+- `MANUAL`: Install it outside OSINT Hub from the official vendor or project docs.
+- `DOCS ONLY`: The upstream project is not a real standalone CLI in this build yet.
+- `UNSUPPORTED`: The upstream project is too old or incompatible with the managed runtime.
+
+### Before You Install Any Tool
+
+- Prefer Python `3.11`. Many upstream OSINT tools break on Python `3.13+` and especially `3.14`.
+- If you are using the Windows `.exe` release, run `OSINT Hub Runtime Setup.exe` once before installing Python-based tools.
+- Git-based tools need `git` in your `PATH`.
+- Some Windows installs need Microsoft C++ Build Tools because upstream Python packages compile native extensions.
+- If a scan fails with `Could not contact DNS servers`, `ClientConnectorDNSError`, or similar network errors, fix DNS/outbound HTTPS first. That is not a bad username or bad install.
+- Several tools only accept a specific target type. A person name will not work for domain-only, email-only, network, or file-metadata tools.
+
+### Tool-by-Tool Download Guide
+
+| Tool | Best Install Path | Common Problem | What To Do | Official Docs |
+|------|-------------------|----------------|------------|---------------|
+| `Sherlock` | Install from OSINT Hub | Username search only | Use a username, not a real name, domain, or file path. If a Git reinstall gets stuck, close Explorer or antivirus tools using the repo folder and retry. | [Sherlock install](https://sherlockproject.xyz/installation) |
+| `theHarvester` | Install from OSINT Hub | Domain-only input and source-specific requirements | Use a domain like `example.com`. Some sources need API keys or extra upstream setup, so edit `api-keys.yaml` when needed. | [theHarvester install](https://github.com/laramies/theHarvester/wiki/Installation) |
+| `ExifTool` | Windows: official executable is easiest. Source install also works if Perl is installed. | `SETUP REQUIRED` because Perl is missing | On Windows, the easiest path is the official ExifTool package. If you want the Git/source install, install Perl first and then retry from OSINT Hub. Use a file or directory target, not a username. | [ExifTool install](https://exiftool.org/install.html) |
+| `SocialScan` | Install from OSINT Hub | DNS or HTTPS connection failures | Use a username or email address only. If every provider shows DNS/connect errors, fix the PC network first and retry. | [SocialScan README](https://github.com/iojw/socialscan) |
+| `Nmap` | Manual install from the official installer or OS package manager | Not auto-installed by OSINT Hub | Install Nmap manually. On Windows, install from the official site and keep the packet capture components if prompted. Use a host or IP target, not a person or email. | [Nmap download](https://nmap.org/download.html) |
+| `Amass` | Manual install from release, package manager, or Docker | Not auto-installed and domain-only | Install a release build or use your package manager. Use `amass enum -d example.com` style targets. Many richer data sources work better once you configure provider keys. | [Amass docs](https://owasp-amass.github.io/docs/) |
+| `PhoneInfo` / `PhoneInfoga` | Manual install from the official binary, Homebrew, or Docker | Not a pip tool and phone format matters | Follow the official install page. Use a full international number like `+15551234567`. | [PhoneInfoga install](https://sundowndev.github.io/phoneinfoga/getting-started/install/) |
+| `SpiderFoot` | Install from OSINT Hub or use Docker | Windows installs can fail on `lxml` / native build steps | If you see `Microsoft Visual C++ 14.0 or greater is required`, install Microsoft C++ Build Tools and retry. If you want fewer Python dependency problems, use the Docker path from the upstream docs instead. | [SpiderFoot docs](https://www.spiderfoot.net/documentation/) |
+| `Maltego CE` | Manual vendor install | GUI app with account/login flow | Download it from Maltego, install it manually, and sign in. OSINT Hub links it but does not bundle the installer. | [Maltego docs](https://docs.maltego.com/) |
+| `Recon-ng` | Install from OSINT Hub | Framework modules can still need their own setup | The core framework installs cleanly, but many marketplace modules need API keys or extra dependencies. Use `marketplace info <module>` inside Recon-ng when a module does not run. | [Recon-ng getting started](https://github.com/lanmaster53/recon-ng/wiki/Getting-Started) |
+| `Shodan CLI` | Install from OSINT Hub | API key not initialized or Python runtime mismatch | After install, run `shodan init YOUR_API_KEY`. If startup fails with `pkg_resources` or similar packaging errors, reinstall it inside the Python `3.11` runtime instead of a newer global Python. | [Shodan CLI getting started](https://help.shodan.io/command-line-interface/1-getting-started) |
+| `Hunter.io` | Docs only for now | No bundled standalone CLI | Hunter is API-first. Create a Hunter account, get an API key, and use the official API endpoints in your own wrapper or future OSINT Hub integration. | [Hunter API docs](https://hunter.io/api-documentation/) |
+| `HaveIBeenPwned` / `h8mail` | Install from OSINT Hub | Wrong target type | This tool expects an email address, not a person name or username. Some extra breach sources also need their own API keys or config entries. | [h8mail project](https://github.com/khast3x/h8mail) |
+| `Instaloader` | Install from OSINT Hub | Login/session issues and rate limits | Use an Instagram profile or supported Instagram target. If anonymous scraping is limited, use `--login` and keep the saved session file. If you hit `429` or rate-limit messages, wait and reuse the same session. | [Instaloader install](https://instaloader.github.io/installation.html) |
+| `Twint` | Install from OSINT Hub if it works, otherwise treat as experimental | Old dependency stack and Windows build failures | In this project, Windows installs may fail while building native dependencies such as `cchardet`. Prefer Python `3.11`, and be prepared to use a separate manual or Docker-based setup if upstream pip installs fail. | [Twint setup](https://github.com/twintproject/twint/wiki/Setup) |
+| `GitHub Recon` / `github-dorks` | Install from OSINT Hub | Old dependency stack and missing GitHub authentication | If the tool throws import errors on a very new Python, move back to the managed Python `3.11` runtime. For better results and fewer rate-limit problems, provide GitHub authentication when using the upstream tool. | [GitHub Dorks repo](https://github.com/techgaun/github-dorks) |
+| `Metagoofil` | Do not rely on the bundled runtime | Legacy Python 2 code | This upstream project is legacy and is marked `UNSUPPORTED` in OSINT Hub because it does not run on the managed Python 3 runtime. Use another metadata workflow such as ExifTool or FOCA, or isolate Metagoofil in a legacy lab/VM if you absolutely need it. | [Metagoofil repo](https://github.com/laramies/metagoofil) |
+| `FOCA` | Manual install on Windows | Windows-only GUI workflow | Download FOCA from its official project page and run it manually on Windows. It is not bundled as a Python tool inside OSINT Hub. | [FOCA repo](https://github.com/ElevenPaths/FOCA) |
+
+### Fast "Wrong Target" Checks
+
+If a tool installs fine but still "does nothing", check the target type first:
+
+- Use `Sherlock`, `SocialScan`, `Instaloader`, or `GitHub Recon` for usernames or social targets.
+- Use `theHarvester` or `Amass` for domains.
+- Use `Nmap` for IPs or hostnames.
+- Use `ExifTool` or `FOCA` for files, directories, or document metadata workflows.
+- Use `PhoneInfoga` for full phone numbers with country codes.
+- Use `h8mail` for email addresses.
 
 ## How It Works
 
@@ -305,6 +432,29 @@ Most tools need internet and correct Python version. Check:
 python3 --version  # Should be 3.8+
 pip3 --version
 ```
+
+### SocialScan shows DNS or connection errors
+Example errors:
+```text
+ClientConnectorDNSError
+Could not contact DNS servers
+Cannot connect to host ...:443
+```
+
+What this means:
+- OSINT Hub started SocialScan correctly, but the PC could not reach the target sites.
+- This is usually a local DNS, firewall, proxy, VPN, antivirus, or outbound network restriction issue.
+
+What to check on Windows:
+```powershell
+nslookup github.com
+Test-NetConnection github.com -Port 443
+```
+
+If these fail:
+- Fix the PC network or DNS settings first
+- Retry SocialScan after confirming the machine can resolve domains and reach HTTPS sites
+- If you are on a restricted network, try another DNS server or another connection
 
 ### Permission denied errors
 Some tools require sudo (APT-based). Install them manually:

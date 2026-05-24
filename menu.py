@@ -4,53 +4,78 @@ OSINT Hub - Interactive Menu (Beginner-friendly CLI)
 Simple numbered menu system for users not comfortable with complex commands.
 """
 
+import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+PROJECT_ROOT = Path(__file__).parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from osinthub.tools.registry import ToolRegistry, ToolCategory
-from osinthub.core.tool_manager import ToolManager
+from osinthub.core.runtime import maybe_reexec_in_project_venv
+
+if Path(sys.argv[0]).stem.lower() == "menu":
+    maybe_reexec_in_project_venv(PROJECT_ROOT)
+
+from osinthub.core.console import configure_console, print_safe
 from osinthub.core.results_manager import ResultsManager
+from osinthub.core.tool_manager import ToolManager
+from osinthub.tools.registry import ToolCategory
 
-registry = ToolRegistry()
+configure_console()
+
 tool_manager = ToolManager()
+registry = tool_manager.registry
 results_manager = ResultsManager()
 
+
 def print_banner():
-    print("\n" + "="*60)
-    print("🔍 OSINT Hub - Interactive Menu")
-    print("="*60)
+    print_safe("\n" + "=" * 60)
+    print_safe("OSINT Hub - Interactive Menu")
+    print_safe("=" * 60)
+
 
 def clear_screen():
-    import os
-    os.system('clear' if os.name == 'posix' else 'cls')
+    os.system("clear" if os.name == "posix" else "cls")
+
 
 def pause():
     input("\nPress Enter to continue...")
 
+
+def infer_target(params):
+    for key in ("target", "username", "domain", "number", "profile", "query"):
+        value = params.get(key)
+        if value:
+            return str(value)
+    return "unknown"
+
+
 def list_tools():
     """Display all tools with numbers."""
-    print("\nAvailable Tools:\n")
+    print_safe("\nAvailable Tools:\n")
+    tool_manager.refresh_tool_states(persist=False)
     tools = registry.get_all_tools()
-    for i, tool in enumerate(tools, 1):
-        status = "✓" if tool.installed or tool_manager.check_tool_installed(tool) else "✗"
-        print(f"  {i}. {status} {tool.icon} {tool.name}")
-        print(f"     {tool.description}\n")
+
+    for index, tool in enumerate(tools, 1):
+        status, _ = tool_manager.get_tool_availability(tool)
+        print_safe(f"  {index}. [{status}] {tool.icon} {tool.name}")
+        print_safe(f"     {tool.description}\n")
+
 
 def show_categories():
     """Show category menu."""
-    print("\nSelect Category:\n")
+    print_safe("\nSelect Category:\n")
     categories = list(ToolCategory)
-    for i, cat in enumerate(categories, 1):
-        print(f"  {i}. {cat.value}")
-    print(f"  {len(categories)+1}. All Tools")
-    print(f"  0. Back")
+    for index, category in enumerate(categories, 1):
+        print_safe(f"  {index}. {category.value}")
+    print_safe(f"  {len(categories) + 1}. All Tools")
+    print_safe("  0. Back")
+
 
 def install_tool_interactive():
     """Interactive tool installation."""
     list_tools()
-    print("\nEnter tool number to install (or 0 to cancel):")
+    print_safe("\nEnter tool number to install (or 0 to cancel):")
     try:
         choice = int(input("Choice: "))
         if choice == 0:
@@ -58,48 +83,42 @@ def install_tool_interactive():
 
         tools = registry.get_all_tools()
         if 1 <= choice <= len(tools):
-            tool = tools[choice-1]
-            if tool.installed or tool_manager.check_tool_installed(tool):
-                print(f"\n{tool.name} is already installed.")
-                if input("Reinstall? (y/N): ").lower() == 'y':
+            tool = tools[choice - 1]
+            if tool_manager.check_tool_installed(tool):
+                print_safe(f"\n{tool.name} is already installed.")
+                if input("Reinstall? (y/N): ").lower() == "y":
                     tool_manager.uninstall_tool(tool)
                 else:
                     return
 
-            print(f"\nInstalling {tool.name}...")
-            import threading
-            def do_install():
-                success, msg = tool_manager.install_tool(tool)
-                if success:
-                    print(f"✓ {tool.name} installed!")
-                else:
-                    print(f"✗ Failed: {msg}")
-                    print(f"\nManual install: {tool.install_command}")
-
-            thread = threading.Thread(target=do_install, daemon=True)
-            thread.start()
-            thread.join(timeout=300)  # 5 minute timeout
+            print_safe(f"\nInstalling {tool.name}...")
+            success, message = tool_manager.install_tool(tool)
+            if success:
+                print_safe(f"{tool.name} installed.")
+            else:
+                print_safe(f"Failed: {message}")
+                print_safe(f"\nManual install: {tool_manager.get_install_guide(tool)}")
 
             pause()
         else:
-            print("Invalid choice.")
+            print_safe("Invalid choice.")
     except ValueError:
-        print("Please enter a number.")
+        print_safe("Please enter a number.")
+
 
 def run_tool_interactive():
     """Interactive tool runner."""
-    print("\nSelect a tool to run:\n")
-    installed_tools = [t for t in registry.get_all_tools()
-                      if t.installed or tool_manager.check_tool_installed(t)]
+    print_safe("\nSelect a tool to run:\n")
+    installed_tools = [tool for tool in registry.get_all_tools() if tool_manager.check_tool_installed(tool)]
 
     if not installed_tools:
-        print("No tools installed. Install some first!")
+        print_safe("No runnable tools detected. Install one first.")
         pause()
         return
 
-    for i, tool in enumerate(installed_tools, 1):
-        print(f"  {i}. {tool.icon} {tool.name}")
-    print("  0. Back")
+    for index, tool in enumerate(installed_tools, 1):
+        print_safe(f"  {index}. {tool.icon} {tool.name}")
+    print_safe("  0. Back")
 
     try:
         choice = int(input("\nChoice: "))
@@ -107,18 +126,19 @@ def run_tool_interactive():
             return
 
         if 1 <= choice <= len(installed_tools):
-            tool = installed_tools[choice-1]
+            tool = installed_tools[choice - 1]
             run_tool_with_input(tool)
         else:
-            print("Invalid choice.")
+            print_safe("Invalid choice.")
     except ValueError:
-        print("Please enter a number.")
+        print_safe("Please enter a number.")
+
 
 def run_tool_with_input(tool):
     """Get parameters from user and run tool."""
-    print(f"\n{'='*60}")
-    print(f"Running: {tool.name}")
-    print('='*60)
+    print_safe(f"\n{'=' * 60}")
+    print_safe(f"Running: {tool.name}")
+    print_safe("=" * 60)
 
     params = {}
     for param in tool.parameters:
@@ -131,81 +151,68 @@ def run_tool_with_input(tool):
 
         if value:
             if param.type == "boolean":
-                params[param.name] = value.lower() in ('y', 'yes', 'true', '1')
+                params[param.name] = value.lower() in ("y", "yes", "true", "1")
             else:
                 params[param.name] = value
-        elif param.default:
+        elif param.default is not None:
             params[param.name] = param.default
         elif param.required:
-            print(f"  {param.name} is required! Skipping...")
+            print_safe(f"{param.name} is required. Skipping run.")
+            pause()
             return
 
-    print(f"\nStarting {tool.name}...")
-    import subprocess
+    print_safe(f"\nStarting {tool.name}...")
+    success, stdout, stderr = tool_manager.run_tool(tool, params)
 
-    try:
-        # Build command
-        cmd = [tool.run_command]
-        for param in tool.parameters:
-            if param.name in params:
-                if param.type == "boolean":
-                    if params[param.name]:
-                        cmd.append(param.flag)
-                else:
-                    cmd.append(param.flag)
-                    cmd.append(str(params[param.name]))
+    print_safe("=" * 60)
+    if success:
+        print_safe("Scan completed.\n")
+        if stdout:
+            print_safe(stdout)
 
-        print(f"Command: {' '.join(cmd)}\n")
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=300,
-            cwd=tool.install_path if tool.install_path else None
-        )
-
-        print("="*60)
-        if result.returncode == 0:
-            print("✓ Scan completed!\n")
-            print(result.stdout)
-
-            # Save result
-            target = params.get("target", params.get("username", params.get("domain", "unknown")))
-            scan_result = results_manager.save_result(tool, target, result.stdout)
-            print(f"\n📁 Result saved (ID: {scan_result.result_id})")
-        else:
-            print("✗ Scan failed\n")
-            print(result.stderr)
-
-    except subprocess.TimeoutExpired:
-        print("✗ Scan timed out (5 minutes)")
-    except Exception as e:
-        print(f"✗ Error: {e}")
+        target = infer_target(params)
+        try:
+            scan_result = results_manager.save_result(tool, target, stdout)
+            print_safe(f"\nResult saved (ID: {scan_result.result_id})")
+        except Exception as exc:
+            print_safe(f"\nWarning: scan finished but the result could not be saved: {exc}")
+    else:
+        print_safe("Scan failed.\n")
+        if stdout:
+            print_safe(stdout)
+        if stderr:
+            print_safe(stderr)
 
     pause()
+
 
 def view_results():
     """View saved results."""
     results = results_manager.get_results(limit=50)
-    print(f"\n📊 Scan Results ({len(results)} most recent):\n")
-    print(f"{'ID':<12} {'Tool':<20} {'Target':<25} {'Time':<19}")
-    print("-"*80)
+    print_safe(f"\nScan Results ({len(results)} most recent):\n")
+    print_safe(f"{'ID':<12} {'Tool':<20} {'Target':<25} {'Time':<19}")
+    print_safe("-" * 80)
 
     for result in results:
-        print(f"{result.result_id:<12} {result.data.get('tool_name',''):<20} {result.target:<25} {result.timestamp.strftime('%Y-%m-%d %H:%M:%S'):<19}")
+        print_safe(
+            f"{result.result_id:<12} "
+            f"{result.data.get('tool_name', ''):<20} "
+            f"{result.target:<25} "
+            f"{result.timestamp.strftime('%Y-%m-%d %H:%M:%S'):<19}"
+        )
 
-    print()
+    print_safe("")
     pause()
+
 
 def export_results():
     """Export results menu."""
-    print("\nExport Format:")
-    print("  1. JSON")
-    print("  2. CSV")
-    print("  3. TXT")
-    print("  4. HTML")
-    print("  0. Cancel")
+    print_safe("\nExport Format:")
+    print_safe("  1. JSON")
+    print_safe("  2. CSV")
+    print_safe("  3. TXT")
+    print_safe("  4. HTML")
+    print_safe("  0. Cancel")
 
     try:
         fmt_choice = int(input("\nSelect format: "))
@@ -220,17 +227,18 @@ def export_results():
 
         results = results_manager.get_results(limit=1000)
         if results_manager.export_results(results, filename, fmt):
-            print(f"\n✓ Exported {len(results)} results to {filename}")
+            print_safe(f"\nExported {len(results)} results to {filename}")
         else:
-            print("✗ Export failed")
+            print_safe("Export failed")
     except ValueError:
-        print("Invalid choice")
+        print_safe("Invalid choice")
     pause()
+
 
 def show_tool_info():
     """Show detailed tool information."""
     list_tools()
-    print("\nEnter tool number for details (or 0 to cancel):")
+    print_safe("\nEnter tool number for details (or 0 to cancel):")
     try:
         choice = int(input("Choice: "))
         if choice == 0:
@@ -238,37 +246,38 @@ def show_tool_info():
 
         tools = registry.get_all_tools()
         if 1 <= choice <= len(tools):
-            tool = tools[choice-1]
-            print(f"\n{'='*60}")
-            print(f"{tool.icon} {tool.name}")
-            print('='*60)
-            print(f"Category: {tool.category.value}")
-            print(f"\nDescription:\n{tool.long_description or tool.description}\n")
-            print(f"Homepage: {tool.homepage}")
+            tool = tools[choice - 1]
+            print_safe(f"\n{'=' * 60}")
+            print_safe(f"{tool.icon} {tool.name}")
+            print_safe("=" * 60)
+            print_safe(f"Category: {tool.category.value}")
+            print_safe(f"\nDescription:\n{tool.long_description or tool.description}\n")
+            print_safe(f"Homepage: {tool.homepage or 'N/A'}")
             if tool.examples:
-                print("\nExamples:")
-                for ex in tool.examples:
-                    print(f"  $ {ex}")
-            print(f"\nInstall: {tool.install_command}")
+                print_safe("\nExamples:")
+                for example in tool.examples:
+                    print_safe(f"  $ {example}")
+            print_safe(f"\nInstall: {tool.install_command}")
         else:
-            print("Invalid choice.")
+            print_safe("Invalid choice.")
     except ValueError:
-        print("Please enter a number.")
+        print_safe("Please enter a number.")
     pause()
+
 
 def main_menu():
     """Main interactive menu."""
     while True:
         clear_screen()
         print_banner()
-        print("\nMain Menu:\n")
-        print("  1. Browse & Install Tools")
-        print("  2. Run an Installed Tool")
-        print("  3. View Results")
-        print("  4. Export Results")
-        print("  5. Quick Setup (install recommended tools)")
-        print("  6. Show Tool Info")
-        print("  0. Exit")
+        print_safe("\nMain Menu:\n")
+        print_safe("  1. Browse & Install Tools")
+        print_safe("  2. Run an Installed Tool")
+        print_safe("  3. View Results")
+        print_safe("  4. Export Results")
+        print_safe("  5. Quick Setup (install recommended tools)")
+        print_safe("  6. Show Tool Info")
+        print_safe("  0. Exit")
 
         try:
             choice = int(input("\nChoice: "))
@@ -286,58 +295,63 @@ def main_menu():
             elif choice == 6:
                 show_tool_info()
             elif choice == 0:
-                print("\nGoodbye!")
+                print_safe("\nGoodbye!")
                 break
             else:
-                print("Invalid choice")
+                print_safe("Invalid choice")
                 pause()
         except ValueError:
-            print("Please enter a number")
+            print_safe("Please enter a number")
             pause()
         except KeyboardInterrupt:
-            print("\n\nGoodbye!")
+            print_safe("\n\nGoodbye!")
             break
+
 
 def quick_setup():
     """Quick setup wizard for beginners."""
-    print("\n" + "="*60)
-    print("🚀 Quick Setup - Recommended Starter Pack")
-    print("="*60)
-    print("\nFor beginners, we recommend installing these tools first:\n")
-    print("  1. Sherlock - Search usernames across social media")
-    print("  2. theHarvester - Find emails and subdomains")
-    print("  3. ExifTool - Extract metadata from images")
-    print("  4. SocialScan - Check username/email availability")
-    print("\nThese tools cover the most common OSINT needs.")
+    print_safe("\n" + "=" * 60)
+    print_safe("Quick Setup - Recommended Starter Pack")
+    print_safe("=" * 60)
+    print_safe("\nFor beginners, we recommend installing these tools first:\n")
+    print_safe("  1. Sherlock - Search usernames across social media")
+    print_safe("  2. theHarvester - Find emails and subdomains")
+    print_safe("  3. SocialScan - Check username/email availability")
+    print_safe("  4. Instaloader - Download Instagram metadata and media")
+    print_safe("\nThese tools are the most portable options in the current bundle.")
 
     response = input("\nInstall all 4? (Y/n): ").lower()
-    if response in ('y', 'yes', ''):
-        recommended = ["sherlock", "harvester", "exiftool", "socialscan"]
+    if response in ("y", "yes", ""):
+        recommended = ["sherlock", "harvester", "socialscan", "instaloader"]
         for tool_id in recommended:
             tool = registry.get_tool(tool_id)
-            if tool:
-                print(f"\nInstalling {tool.name}...")
-                success, msg = tool_manager.install_tool(tool)
-                if success:
-                    print(f"  ✓ {tool.name} installed")
-                else:
-                    print(f"  ✗ Failed: {msg}")
+            if not tool:
+                continue
 
-        print("\n✅ Setup complete! You can now run these tools.")
-        print("   Go to 'Run an Installed Tool' to start.")
+            print_safe(f"\nInstalling {tool.name}...")
+            success, message = tool_manager.install_tool(tool)
+            if success:
+                print_safe(f"  {tool.name} installed")
+            else:
+                print_safe(f"  Failed: {message}")
+
+        print_safe("\nSetup complete. You can now run these tools.")
+        print_safe("Go to 'Run an Installed Tool' to start.")
     else:
-        print("Skipped. You can install tools individually.")
+        print_safe("Skipped. You can install tools individually.")
 
     pause()
+
 
 def main():
     try:
         main_menu()
     except KeyboardInterrupt:
-        print("\n\nGoodbye!")
+        print_safe("\n\nGoodbye!")
     except Exception as e:
-        print(f"\nUnexpected error: {e}")
-        print("Please report this bug.")
+        print_safe(f"\nUnexpected error: {e}")
+        print_safe("Please report this bug.")
+
 
 if __name__ == "__main__":
     main()

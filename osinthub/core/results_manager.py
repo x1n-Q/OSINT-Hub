@@ -5,12 +5,13 @@ Handles tool output storage, parsing, and export functionality.
 
 import json
 import csv
-import os
+import html
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import hashlib
 
+from osinthub.core.paths import get_osinthub_home
 from osinthub.tools.registry import ToolCategory, OSINTTool
 
 class ScanResult:
@@ -51,7 +52,7 @@ class ResultsManager:
     """Manages storing, retrieving, and exporting scan results."""
 
     def __init__(self, results_dir: str = None):
-        self.results_dir = Path(results_dir or Path.home() / ".osinthub" / "results")
+        self.results_dir = Path(results_dir or get_osinthub_home() / "results")
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
         self._results: Dict[str, ScanResult] = {}
@@ -62,7 +63,7 @@ class ResultsManager:
         index_file = self.results_dir / "index.json"
         if index_file.exists():
             try:
-                with open(index_file, 'r') as f:
+                with open(index_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 for result_data in data:
                     result = ScanResult.from_dict(result_data)
@@ -74,7 +75,7 @@ class ResultsManager:
         """Save results index to disk."""
         index_file = self.results_dir / "index.json"
         data = [r.to_dict() for r in self._results.values()]
-        with open(index_file, 'w') as f:
+        with open(index_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
     def save_result(self, tool: OSINTTool, target: str, raw_output: str,
@@ -104,7 +105,7 @@ class ResultsManager:
 
         # Save individual result file
         result_file = self.results_dir / f"{result.result_id}.json"
-        with open(result_file, 'w') as f:
+        with open(result_file, 'w', encoding='utf-8') as f:
             json.dump(result.to_dict(), f, indent=2)
 
         self._results[result.result_id] = result
@@ -196,7 +197,7 @@ class ResultsManager:
     def _export_json(self, results: List[ScanResult], filepath: str):
         """Export to JSON."""
         data = [r.to_dict() for r in results]
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
     def _export_csv(self, results: List[ScanResult], filepath: str):
@@ -252,21 +253,24 @@ class ResultsManager:
 """
 
         for result in results:
+            tool_name = html.escape(str(result.data.get("tool_name", result.tool_id)))
+            target = html.escape(str(result.target))
+            raw_output = html.escape(str(result.data.get("raw", "")))
             html_content += f"""
     <div class="result">
-        <h2>{result.data.get('tool_name', result.tool_id)}</h2>
-        <p class="tool-name">Tool: {result.data.get('tool_name', result.tool_id)}</p>
-        <p class="target">Target: {result.target}</p>
+        <h2>{tool_name}</h2>
+        <p class="tool-name">Tool: {tool_name}</p>
+        <p class="target">Target: {target}</p>
         <p class="timestamp">Time: {result.timestamp.strftime('%Y-%m-%d %H:%M:%S')}</p>
         <h3>Raw Output:</h3>
-        <div class="raw">{result.data.get('raw', '')}</div>
+        <div class="raw">{raw_output}</div>
     </div>
 """
         html_content += """
 </body>
 </html>
 """
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
     def get_statistics(self) -> Dict:

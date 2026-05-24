@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -25,11 +26,13 @@ wheels/
 
 # OSINT Hub specific
 .osinthub/
-tools/
+.osinthub-local/
+/tools/
 config/
 output/
 *.db
 *.log
+tool_audit_*.json
 
 # IDEs
 .vscode/

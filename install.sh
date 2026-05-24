@@ -15,16 +15,9 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Check for pip
-if ! command -v pip3 &> /dev/null; then
-    echo "Installing pip..."
-    sudo apt-get update
-    sudo apt-get install -y python3-pip
-fi
-
-# Install Python dependencies
-echo "Installing Python dependencies..."
-pip3 install -r requirements.txt
+# Bootstrap project virtual environment
+echo "Preparing local Python 3.11 virtual environment..."
+python3 bootstrap_env.py
 
 # Create symbolic links
 echo "Creating command shortcuts..."
@@ -39,7 +32,7 @@ Version=1.0
 Type=Application
 Name=OSINT Hub
 Comment=All-in-One OSINT Framework
-Exec=python3 $PROJECT_PATH/main.py
+Exec=$PROJECT_PATH/.venv/bin/python $PROJECT_PATH/main.py
 Icon=$PROJECT_PATH/osinthub/gui/icon.png
 Terminal=false
 Categories=Security;Network;
@@ -53,7 +46,7 @@ echo "✓ Installation complete!"
 echo ""
 echo "You can now:"
 echo "  1. Launch from Applications menu (OSINT Hub)"
-echo "  2. Run: python3 $PROJECT_PATH/main.py"
-echo "  3. Use CLI: python3 $PROJECT_PATH/cli.py"
+echo "  2. Run: $PROJECT_PATH/.venv/bin/python $PROJECT_PATH/main.py"
+echo "  3. Use CLI: $PROJECT_PATH/.venv/bin/python $PROJECT_PATH/cli.py"
 echo ""
 echo "Happy hunting! 🔍"

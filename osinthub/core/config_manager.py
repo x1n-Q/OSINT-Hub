@@ -4,14 +4,17 @@ Handles user settings, preferences, and configuration.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+
+from osinthub.core.paths import get_osinthub_home
 
 class ConfigManager:
     """Manages application configuration."""
 
     def __init__(self, config_dir: str = None):
-        self.config_dir = Path(config_dir or Path.home() / ".osinthub" / "config")
+        self.config_dir = Path(config_dir or get_osinthub_home() / "config")
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.config_file = self.config_dir / "config.json"
 
@@ -27,7 +30,7 @@ class ConfigManager:
             "save_results": True,
             "results_limit": 1000,
             "default_export_format": "json",
-            "output_directory": str(Path.home() / "osinthub_output"),
+            "output_directory": str((Path(os.environ.get("USERPROFILE", str(Path.home()))) / "osinthub_output")),
             "proxy": None,
             "user_agent": "OSINTHub/1.0",
             "timeout": 30,

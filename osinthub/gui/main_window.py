@@ -7,14 +7,14 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
 import customtkinter as ctk
 import threading
-import queue
 import os
+import webbrowser
 from pathlib import Path
 from datetime import datetime
 
-from osinthub.tools.registry import ToolRegistry, ToolCategory
+from osinthub.tools.registry import ToolCategory
 from osinthub.core.tool_manager import ToolManager
-from osinthub.core.results_manager import ResultsManager, ScanResult
+from osinthub.core.results_manager import ResultsManager
 
 # Set appearance
 ctk.set_appearance_mode("dark")
@@ -26,13 +26,22 @@ SUCCESS_COLOR = "#10b981" # Emerald green
 ERROR_COLOR = "#ef4444"   # Red
 BG_DARK = "#0f172a"       # Slate 900
 BG_CARD = "#1e293b"       # Slate 800
+STATUS_COLORS = {
+    "READY": SUCCESS_COLOR,
+    "AVAILABLE": ACCENT_COLOR,
+    "SETUP REQUIRED": "#f97316",
+    "MANUAL": "#f59e0b",
+    "DOCS ONLY": "#0ea5e9",
+    "UNSUPPORTED": ERROR_COLOR,
+}
 
 class ToolCard(ctk.CTkFrame):
     """A card widget displaying a tool with modern styling."""
 
-    def __init__(self, master, tool, on_click=None, **kwargs):
+    def __init__(self, master, tool, tool_manager, on_click=None, **kwargs):
         super().__init__(master, **kwargs)
         self.tool = tool
+        self.tool_manager = tool_manager
         self.on_click = on_click
 
         self.configure(
@@ -58,7 +67,7 @@ class ToolCard(ctk.CTkFrame):
         self.icon_label = ctk.CTkLabel(
             self.icon_bg,
             text=tool.icon or "🛠️",
-            font=ctk.CTkFont(size=32)
+            font=ctk.CTkFont(family="Segoe UI Emoji" if os.name == "nt" else None, size=32)
         )
         self.icon_label.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -85,8 +94,8 @@ class ToolCard(ctk.CTkFrame):
         self.desc_label.pack(anchor="w", pady=(5, 0))
 
         # Status badge
-        status_color = SUCCESS_COLOR if tool.installed else "#64748b"
-        status_text = "READY" if tool.installed else "NOT INSTALLED"
+        status_text, _ = self.tool_manager.get_tool_availability(tool)
+        status_color = STATUS_COLORS.get(status_text, "#64748b")
 
         self.status_badge = ctk.CTkFrame(
             self,
@@ -131,10 +140,10 @@ class ToolCard(ctk.CTkFrame):
         if self.on_click:
             self.on_click(self.tool)
 
-    def update_status(self, installed: bool):
+    def update_status(self):
         """Update the installed status display."""
-        status_color = SUCCESS_COLOR if installed else "#64748b"
-        status_text = "READY" if installed else "NOT INSTALLED"
+        status_text, _ = self.tool_manager.get_tool_availability(self.tool)
+        status_color = STATUS_COLORS.get(status_text, "#64748b")
         self.status_badge.configure(fg_color=status_color)
         self.status_label.configure(text=status_text)
 
@@ -148,18 +157,52 @@ class ToolDetailView(ctk.CTkFrame):
         self.results_manager = results_manager
         self.on_back = on_back
         self.configure(fg_color="transparent")
+        self.tool.installed = self.tool_manager.check_tool_installed(self.tool)
 
         self._build_ui()
+
+    def _apply_install_state(self):
+        """Sync buttons with actual tool availability."""
+        availability, detail = self.tool_manager.get_tool_availability(self.tool)
+        installed = availability == "READY"
+        self.tool.installed = installed
+        self.run_btn.configure(state="normal" if installed else "disabled")
+
+        if availability in {"READY", "AVAILABLE"}:
+            self.install_btn.configure(
+                state="normal",
+                text="REINSTALL" if installed else "INSTALL",
+                fg_color="#334155" if installed else SUCCESS_COLOR,
+                hover_color="#475569" if installed else "#059669",
+            )
+        else:
+            self.install_btn.configure(
+                state="disabled",
+                text=availability,
+                fg_color="#475569",
+                hover_color="#475569",
+            )
+
+        self.availability_badge.configure(fg_color=STATUS_COLORS.get(availability, "#64748b"))
+        self.availability_label.configure(text=availability)
+        self.availability_detail.configure(text=detail)
+
+    def _open_url(self, url: str):
+        """Open upstream docs in the default browser."""
+        if url.startswith("http"):
+            webbrowser.open_new_tab(url)
 
     def _build_ui(self):
         """Build the detail view UI."""
         # Header
-        header = ctk.CTkFrame(self, height=100, fg_color=BG_CARD, corner_radius=15)
+        header = ctk.CTkFrame(self, fg_color=BG_CARD, corner_radius=15)
         header.pack(fill="x", padx=10, pady=10)
-        header.pack_propagate(False)
+
+        header_top = ctk.CTkFrame(header, fg_color="transparent")
+        header_top.pack(fill="x", padx=18, pady=(18, 12))
 
         back_btn = ctk.CTkButton(
-            header,
+            header_top,
             text="← BACK",
             width=80,
             height=32,
@@ -168,17 +211,21 @@ class ToolDetailView(ctk.CTkFrame):
             font=ctk.CTkFont(size=12, weight="bold"),
             command=self.on_back
         )
-        back_btn.pack(side="left", padx=20)
+        back_btn.pack(side="left", padx=(0, 16), pady=(6, 0), anchor="n")
 
-        icon_bg = ctk.CTkFrame(header, width=60, height=60, corner_radius=10, fg_color="#1e293b")
-        icon_bg.pack(side="left", padx=10)
+        icon_bg = ctk.CTkFrame(header_top, width=60, height=60, corner_radius=10, fg_color="#1e293b")
+        icon_bg.pack(side="left", padx=(0, 16), pady=(0, 4), anchor="n")
         icon_bg.pack_propagate(False)
 
-        icon_label = ctk.CTkLabel(icon_bg, text=self.tool.icon or "🛠️", font=ctk.CTkFont(size=32))
+        icon_label = ctk.CTkLabel(
+            icon_bg,
+            text=self.tool.icon or "🛠️",
+            font=ctk.CTkFont(family="Segoe UI Emoji" if os.name == "nt" else None, size=32)
+        )
         icon_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        info_frame = ctk.CTkFrame(header, fg_color="transparent")
-        info_frame.pack(side="left", fill="both", expand=True, padx=20, pady=15)
+        info_frame = ctk.CTkFrame(header_top, fg_color="transparent")
+        info_frame.pack(side="left", fill="both", expand=True, padx=(0, 20))
 
         title_label = ctk.CTkLabel(
             info_frame,
@@ -196,9 +243,49 @@ class ToolDetailView(ctk.CTkFrame):
         )
         category_label.pack(anchor="w")
 
+        availability, detail = self.tool_manager.get_tool_availability(self.tool)
+        self.availability_panel = ctk.CTkFrame(
+            header,
+            fg_color="#172235",
+            border_color="#25324a",
+            border_width=1,
+            corner_radius=10,
+        )
+        self.availability_panel.pack(fill="x", padx=18, pady=(0, 18))
+
+        availability_frame = ctk.CTkFrame(self.availability_panel, fg_color="transparent")
+        availability_frame.pack(anchor="w", fill="x", padx=16, pady=14)
+
+        self.availability_badge = ctk.CTkFrame(
+            availability_frame,
+            fg_color=STATUS_COLORS.get(availability, "#64748b"),
+            corner_radius=4,
+            height=22
+        )
+        self.availability_badge.pack(anchor="w")
+
+        self.availability_label = ctk.CTkLabel(
+            self.availability_badge,
+            text=availability,
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color="white",
+            padx=8
+        )
+        self.availability_label.pack()
+
+        self.availability_detail = ctk.CTkLabel(
+            availability_frame,
+            text=detail,
+            font=ctk.CTkFont(size=11),
+            text_color="#94a3b8",
+            wraplength=820,
+            justify="left"
+        )
+        self.availability_detail.pack(anchor="w", pady=(6, 0))
+
         # Action Buttons
-        actions_frame = ctk.CTkFrame(header, fg_color="transparent")
-        actions_frame.pack(side="right", padx=20)
+        actions_frame = ctk.CTkFrame(header_top, fg_color="transparent")
+        actions_frame.pack(side="right", pady=(4, 0), anchor="n")
 
         self.run_btn = ctk.CTkButton(
             actions_frame,
@@ -224,6 +311,7 @@ class ToolDetailView(ctk.CTkFrame):
             command=self._install_tool
         )
         self.install_btn.pack(side="right", padx=5)
+        self._apply_install_state()
 
         # Content area
         content = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -369,7 +457,7 @@ class ToolDetailView(ctk.CTkFrame):
                 width=150,
                 fg_color="#1e293b",
                 hover_color="#334155",
-                command=lambda: os.system(f"xdg-open {self.tool.homepage}") if self.tool.homepage.startswith("http") else None
+                command=lambda: self._open_url(self.tool.homepage)
             )
             home_btn.pack(side="left", padx=5)
 
@@ -380,7 +468,7 @@ class ToolDetailView(ctk.CTkFrame):
                 width=150,
                 fg_color="#1e293b",
                 hover_color="#334155",
-                command=lambda: os.system(f"xdg-open {self.tool.documentation}") if self.tool.documentation.startswith("http") else None
+                command=lambda: self._open_url(self.tool.documentation)
             )
             doc_btn.pack(side="left", padx=5)
 
@@ -401,22 +489,35 @@ class ToolDetailView(ctk.CTkFrame):
         self.install_btn.configure(state="normal")
 
         if success:
-            self.tool.installed = True
-            self.install_btn.configure(text="REINSTALL", fg_color="#334155", hover_color="#475569")
-            self.run_btn.configure(state="normal")
+            self.tool_manager.refresh_tool_states()
+            self._apply_install_state()
             messagebox.showinfo("Success", f"{self.tool.name} installed successfully!")
         else:
+            self._apply_install_state()
             messagebox.showerror("Installation Failed", message)
 
     def _run_tool(self):
         """Run the tool with configured parameters."""
+        if not self.tool_manager.check_tool_installed(self.tool):
+            self._apply_install_state()
+            messagebox.showwarning("Tool Not Available", f"{self.tool.name} is not currently installed.")
+            return
+
         # Gather parameters
         params = {}
+        missing = []
         if self.tool.parameters:
             for param in self.tool.parameters:
                 if param.name in self.param_entries:
                     entry, var = self.param_entries[param.name]
-                    params[param.name] = var.get()
+                    value = var.get()
+                    params[param.name] = value
+                    if param.required and str(value).strip() == "":
+                        missing.append(param.name)
+
+        if missing:
+            messagebox.showwarning("Missing Parameters", f"Please fill in: {', '.join(missing)}")
+            return
 
         # Show output window
         self._show_output_window(params)
@@ -519,22 +620,24 @@ class ToolDetailView(ctk.CTkFrame):
             text_widget.insert("end", "✓ Scan completed successfully\n")
         else:
             text_widget.insert("end", "✗ Scan failed\n")
-            # If it failed and we haven't seen any output yet, show the error
-            if not stdout.strip():
-                text_widget.insert("end", stderr)
+            if stderr:
+                text_widget.insert("end", f"\nReason:\n{stderr}\n")
 
         text_widget.see("end")
 
         # Save result
         if success:
             parsed_data = {"stdout": stdout}
-            result = self.results_manager.save_result(
-                self.tool,
-                str(params.get("target") or params.get("username") or params.get("domain") or params.get("number") or "unknown"),
-                stdout,
-                parsed_data
-            )
-            text_widget.insert("end", f"\nResult saved (ID: {result.result_id})")
+            try:
+                result = self.results_manager.save_result(
+                    self.tool,
+                    str(params.get("target") or params.get("username") or params.get("domain") or params.get("number") or "unknown"),
+                    stdout,
+                    parsed_data
+                )
+                text_widget.insert("end", f"\nResult saved (ID: {result.result_id})")
+            except Exception as exc:
+                text_widget.insert("end", f"\nWarning: result could not be saved: {exc}")
 
     def _save_output(self, content: str):
         """Save output to file."""
@@ -543,7 +646,7 @@ class ToolDetailView(ctk.CTkFrame):
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
         )
         if filepath:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(content)
             messagebox.showinfo("Saved", f"Output saved to {filepath}")
 
@@ -772,6 +875,7 @@ class OSINTHubApp(ctk.CTk):
 
         # Initialize managers
         self.tool_manager = ToolManager()
+        self.tool_manager.refresh_tool_states(persist=False)
         self.results_manager = ResultsManager()
         self.registry = self.tool_manager.registry
 
@@ -794,7 +898,7 @@ class OSINTHubApp(ctk.CTk):
 
         # Logo
         logo_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        logo_frame.pack(pady=(30, 20), padx=20, fill="x")
+        logo_frame.pack(pady=(15, 10), padx=20, fill="x")
 
         logo_label = ctk.CTkLabel(
             logo_frame,
@@ -819,7 +923,7 @@ class OSINTHubApp(ctk.CTk):
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#64748b"
         )
-        nav_label.pack(anchor="w", padx=25, pady=(20, 10))
+        nav_label.pack(anchor="w", padx=25, pady=(10, 5))
 
         self.nav_buttons = {}
         categories = [("All Tools", None)] + [(cat.value, cat) for cat in ToolCategory]
@@ -828,7 +932,7 @@ class OSINTHubApp(ctk.CTk):
             btn = ctk.CTkButton(
                 self.sidebar,
                 text=label.upper(),
-                height=40,
+                height=32,
                 anchor="w",
                 fg_color="transparent",
                 text_color="#94a3b8",
@@ -836,17 +940,17 @@ class OSINTHubApp(ctk.CTk):
                 font=ctk.CTkFont(size=12, weight="bold"),
                 command=lambda c=cat, l=label: self._show_category(c, l)
             )
-            btn.pack(fill="x", padx=15, pady=2)
+            btn.pack(fill="x", padx=15, pady=1)
             self.nav_buttons[label] = btn
 
         # Results button at bottom of nav
         results_sep = ctk.CTkFrame(self.sidebar, height=1, fg_color="#334155")
-        results_sep.pack(fill="x", padx=20, pady=20)
+        results_sep.pack(fill="x", padx=20, pady=10)
 
         self.results_btn = ctk.CTkButton(
             self.sidebar,
             text="📊 SCAN HISTORY",
-            height=45,
+            height=36,
             anchor="w",
             fg_color="transparent",
             text_color="#94a3b8",
@@ -854,11 +958,11 @@ class OSINTHubApp(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
             command=self._show_results
         )
-        self.results_btn.pack(fill="x", padx=15, pady=2)
+        self.results_btn.pack(fill="x", padx=15, pady=1)
 
         # Stats at the very bottom
         stats_frame = ctk.CTkFrame(self.sidebar, fg_color="#0f172a", corner_radius=10)
-        stats_frame.pack(side="bottom", fill="x", padx=20, pady=20)
+        stats_frame.pack(side="bottom", fill="x", padx=20, pady=10)
 
         self.stats_label = ctk.CTkLabel(
             stats_frame,
@@ -897,6 +1001,7 @@ class OSINTHubApp(ctk.CTk):
     def _show_category(self, category, label):
         """Show tools for a specific category with improved layout."""
         self._update_nav_selection(label)
+        self.tool_manager.refresh_tool_states(persist=False)
 
         # Clear current content
         for widget in self.content_frame.winfo_children():
@@ -951,6 +1056,7 @@ class OSINTHubApp(ctk.CTk):
             card = ToolCard(
                 self.tools_container,
                 tool,
+                self.tool_manager,
                 on_click=self._open_tool_detail
             )
             row = i // 2 # 2 columns for better readability at 1280 width
@@ -975,6 +1081,8 @@ class OSINTHubApp(ctk.CTk):
 
     def _open_tool_detail(self, tool):
         """Open detailed tool view."""
+        tool.installed = self.tool_manager.check_tool_installed(tool)
+
         # Clear content
         for widget in self.content_frame.winfo_children():
             widget.destroy()
@@ -1001,6 +1109,7 @@ class OSINTHubApp(ctk.CTk):
 
     def _refresh_status(self):
         """Periodically refresh tool installation status and stats."""
+        self.tool_manager.refresh_tool_states(persist=False)
         stats = self.results_manager.get_statistics()
         latest = stats['latest_scan']
         if latest:
