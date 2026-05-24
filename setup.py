@@ -10,7 +10,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="osinthub",
-    version="1.0.0",
+    version="1.0.1",
     author="Daniel Depaor",
     author_email="daniel.depaor@outlook.jp",
     description="All-in-One OSINT Framework with GUI",

@@ -1,6 +1,6 @@
 # OSINT Hub - All-in-One OSINT Framework
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.11-recommended-brightgreen)
 
 > A comprehensive all-in-one OSINT framework with a modern GUI for beginners and powerful CLI for advanced users. Simplifies the use of multiple OSINT tools in one unified platform.
