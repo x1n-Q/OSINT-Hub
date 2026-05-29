@@ -1,9 +1,56 @@
 # OSINT Hub - All-in-One OSINT Framework
 
-![Version](https://img.shields.io/badge/version-1.0.1-blue)
-![Python](https://img.shields.io/badge/Python-3.11%20recommended-brightgreen?logo=python&logoColor=white)
+[![PyPI version](https://img.shields.io/pypi/v/osinthub.svg?color=blue)](https://pypi.org/project/osinthub/)
+[![Downloads](https://static.pepy.tech/badge/osinthub)](https://pepy.tech/project/osinthub)
+[![Python](https://img.shields.io/pypi/pyversions/osinthub.svg?logo=python&logoColor=white)](https://pypi.org/project/osinthub/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > A comprehensive all-in-one OSINT framework with a modern GUI for beginners and powerful CLI for advanced users. Simplifies the use of multiple OSINT tools in one unified platform.
+
+---
+
+## ⚡ Quick Install (fastest — one command)
+
+```bash
+pip install osinthub
+```
+
+Then launch:
+
+```bash
+osinthub          # GUI (default)
+osinthub-cli      # Command-line interface
+```
+
+### Even faster, isolated install (recommended)
+
+Use [`pipx`](https://pipx.pypa.io/) to install into its own environment — no dependency conflicts:
+
+```bash
+pipx install osinthub
+osinthub
+```
+
+### Upgrade
+
+```bash
+pip install --upgrade osinthub
+```
+
+### Available console scripts after install
+
+| Command | Purpose |
+|---|---|
+| `osinthub` | Launch the GUI |
+| `osinthub-cli` | Use the CLI |
+| `osinthub-gui` | Same as `osinthub` |
+| `osinthub-bootstrap` | Prepare project environment |
+| `osinthub-runtime-setup` | Install managed Python runtime for tools |
+| `osinthub-audit` | Audit installed OSINT tools |
+
+> 💡 Some bundled OSINT tools are installed on-demand via the app's tool manager. After the first launch, run `osinthub-runtime-setup` once to prepare the Python 3.11 runtime used by those tools.
+
+---
 
 ## Features
 
@@ -32,9 +79,12 @@
 - **Breach Data** checking (HaveIBeenPwned)
 - **Dark Web** monitoring tools
 
-## Installation
+## Manual / Development Installation
 
-### Recommended Setup (Python 3.11 + local `.venv`)
+> 👉 For most users, **`pip install osinthub`** (above) is the fastest option.
+> Use the steps below only if you want to hack on the source or build a Windows `.exe`.
+
+### Development Setup (Python 3.11 + local `.venv`)
 
 ```bash
 git clone https://github.com/x1n-Q/OSINT-Hub.git
