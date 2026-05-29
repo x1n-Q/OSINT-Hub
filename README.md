@@ -1,11 +1,11 @@
 # OSINT Hub - All-in-One OSINT Framework
 
 [![PyPI version](https://img.shields.io/pypi/v/osinthub.svg?color=blue)](https://pypi.org/project/osinthub/)
-[![Downloads](https://static.pepy.tech/badge/osinthub)](https://pepy.tech/project/osinthub)
+[![Downloads](https://img.shields.io/pypi/dm/osinthub.svg?color=informational&label=downloads%2Fmonth)](https://pypistats.org/packages/osinthub)
 [![Python](https://img.shields.io/pypi/pyversions/osinthub.svg?logo=python&logoColor=white)](https://pypi.org/project/osinthub/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-> A comprehensive all-in-one OSINT framework with a modern GUI for beginners and powerful CLI for advanced users. Simplifies the use of multiple OSINT tools in one unified platform.
+> A unified, beginner-friendly framework for **Open-Source Intelligence (OSINT) research**. Combines a modern GUI and a CLI to simplify common public-data lookups (usernames, domains, IPs, public records) for journalists, researchers, educators, and security professionals.
 
 ---
 
@@ -48,41 +48,55 @@ pip install --upgrade osinthub
 | `osinthub-runtime-setup` | Install managed Python runtime for tools |
 | `osinthub-audit` | Audit installed OSINT tools |
 
-> 💡 Some bundled OSINT tools are installed on-demand via the app's tool manager. After the first launch, run `osinthub-runtime-setup` once to prepare the Python 3.11 runtime used by those tools.
+> 💡 Some bundled research tools are installed on-demand via the app's tool manager. After the first launch, run `osinthub-runtime-setup` once to prepare the Python 3.11 runtime used by those tools.
+
+---
+
+## ⚖️ Legal & Ethical Use
+
+OSINT Hub is designed for **lawful use only** — investigative journalism, academic research, education, brand protection, missing-person searches, due diligence, and authorized security research.
+
+By using this software you agree that:
+
+- ✅ You will only query data that is **publicly available** or that you have **explicit written authorization** to access.
+- ✅ You will comply with the **terms of service** of any third-party platform queried, and with all applicable laws in your jurisdiction (including GDPR, CCPA, and similar privacy regulations).
+- ❌ You will **not** use this software for stalking, harassment, doxxing, unauthorized access, or any other activity that violates the privacy or rights of others.
+
+The authors and contributors assume **no liability** for misuse. If you are unsure whether a use case is appropriate, **consult a lawyer first**.
 
 ---
 
 ## Features
 
-### For Beginners (No OSINT Experience Needed)
-- **One-Click Installation**: Install complex OSINT tools with a single button
+### For Beginners (No Prior Experience Needed)
+- **One-Click Setup**: Install bundled research tools with a single button
 - **Simplified Interface**: No need to memorize command-line arguments
 - **Guided Workflow**: Step-by-step input forms for each tool
-- **All-in-One Results**: Consolidated results viewer with export options
-- **Automatic Dependency Handling**: Tools and their dependencies are managed for you
+- **Unified Results View**: Consolidated results viewer with export options
+- **Automatic Dependency Handling**: Tool dependencies are managed for you
 
 ### For Advanced Users
-- **Powerful CLI**: Full command-line interface for scripting and automation
-- **Batch Processing**: Run multiple tools on multiple targets
-- **Custom Parameters**: Access all tool options with a clean interface
-- **Export Flexibility**: JSON, CSV, TXT, HTML formats
+- **Full CLI**: Command-line interface for scripting and automation
+- **Batch Processing**: Run multiple lookups in one go
+- **Custom Parameters**: Access all tool options through a clean interface
+- **Flexible Export**: JSON, CSV, TXT, HTML formats
 
-### Core Capabilities
-- **Username Search** across 300+ social networks (Sherlock)
-- **Email Intelligence** harvesting and verification
-- **Domain & DNS** enumeration and subdomain discovery
-- **IP & Geolocation** lookups
-- **Social Media** reconnaissance and archiving
-- **Phone Number** investigation
-- **Image Metadata** extraction
-- **Network Scanning** and security auditing
-- **Breach Data** checking (HaveIBeenPwned)
-- **Dark Web** monitoring tools
+### Core Capabilities (Public-Data Lookups)
+- **Username Search** across 300+ public social networks (powered by Sherlock)
+- **Email Verification** and public-presence lookups
+- **Domain & DNS** information and public subdomain discovery
+- **IP & Geolocation** lookups using public registries
+- **Social Media** public-profile research and archiving
+- **Phone Number** carrier and region lookups
+- **Image Metadata** (EXIF) extraction from files you own
+- **Public Network Info** lookups (WHOIS, ASN, routing)
+- **Public Breach Exposure Check** via the official [HaveIBeenPwned](https://haveibeenpwned.com/) API
+- **Public-Records Research** helpers
 
 ## Manual / Development Installation
 
 > 👉 For most users, **`pip install osinthub`** (above) is the fastest option.
-> Use the steps below only if you want to hack on the source or build a Windows `.exe`.
+> Use the steps below only if you want to **contribute to the source** or build a Windows `.exe`.
 
 ### Development Setup (Python 3.11 + local `.venv`)
 
